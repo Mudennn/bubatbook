@@ -7,6 +7,7 @@ import { updateBookingStatus, getBookingDocuments, verifyDocument, getAuditLogs 
 import { useAuth } from '../../hooks/useAuth';
 import { useFleet } from '../../hooks/useFleet';
 import { supabase } from '../../lib/supabase';
+import { uploadFileRobust } from '../../lib/uploadHelper';
 import { useToast } from '../../components/Toast';
 import { formatDate, formatDateTime } from '../../utils/dates';
 import { formatMYR } from '../../utils/pricing';
@@ -216,7 +217,7 @@ export default function AdminBookingDetail() {
     try {
       const ext = fullPaymentFile.name.split('.').pop();
       const path = `receipts/${id}/full_payment_${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from('customer-documents').upload(path, fullPaymentFile);
+      const { error: upErr } = await uploadFileRobust('customer-documents', path, fullPaymentFile, toast);
       if (upErr) throw upErr;
       const { error } = await supabase.from('bubatrent_booking_bookings')
         .update({ full_payment_receipt_path: path, full_payment_status: 'uploaded' })

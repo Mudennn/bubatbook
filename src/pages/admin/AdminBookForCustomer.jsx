@@ -4,6 +4,7 @@ import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../hooks/useAuth';
 import { useFleet } from '../../hooks/useFleet';
 import { supabase } from '../../lib/supabase';
+import { uploadFileRobust } from '../../lib/uploadHelper';
 import { useToast } from '../../components/Toast';
 import { normalizePhone } from '../../utils/phoneUtils';
 import LoadingSpinner from '../../components/LoadingSpinner';
@@ -117,7 +118,8 @@ export default function AdminBookForCustomer() {
       let receiptUrl = null;
       if (depositReceipt) {
         const rPath = `receipts/admin_${Date.now()}.${depositReceipt.name.split('.').pop()}`;
-        await supabase.storage.from('customer-documents').upload(rPath, depositReceipt);
+        const { error: upErr } = await uploadFileRobust('customer-documents', rPath, depositReceipt, toast);
+        if (upErr) throw upErr;
         receiptUrl = rPath;
       }
 

@@ -179,6 +179,15 @@ npm run build      # Production build
 npm run preview    # Preview production build
 ```
 
+### ✅ Android Upload Smoke Test Checklist
+Due to historical issues with Android Chrome and `supabase-js`, we use a custom `XMLHttpRequest` wrapper to read files into memory (`ArrayBuffer`) and bypass the buggy streaming API.
+When testing on Android devices, verify the following:
+1. **Size Limit:** Attempt to upload an image >10MB. Ensure a clear error toast appears.
+2. **Format Limit:** Attempt to upload a `.heic` or `.heif` image. Ensure the "format not supported" error toast appears.
+3. **Progress Tracking:** Upload a valid image (e.g., 2MB JPEG). Ensure the toast shows "Step 1", "Step 2", and "Uploading: 50%...".
+4. **Success State:** Once upload completes, ensure the form submits successfully without hanging on "Saving..." indefinitely.
+5. **Flows to Check:** Test "Add Credit Receipt" (`Customers.jsx`), "Deposit Receipt" (`Checkout.jsx`), and "Customer Verification" (`VerifyAccount.jsx`).
+
 ---
 
 ## 💰 Payment Flow

@@ -4,6 +4,7 @@ import { useCar } from '../hooks/useCars';
 import { useAuth } from '../hooks/useAuth';
 import { createHoldBooking, updateBookingCustomerInfo, cancelBooking } from '../hooks/useBookings';
 import { supabase } from '../lib/supabase';
+import { uploadFileRobust } from '../lib/uploadHelper';
 import BookingForm from '../components/BookingForm';
 import LoadingSpinner from '../components/LoadingSpinner';
 import { calculatePrice, formatMYR } from '../utils/pricing';
@@ -172,7 +173,7 @@ export default function Checkout() {
       if (receiptFile) {
         const ext = receiptFile.name.split('.').pop();
         const path = `receipts/${booking.id}/deposit_${Date.now()}.${ext}`;
-        const { error: upErr } = await supabase.storage.from('customer-documents').upload(path, receiptFile);
+        const { error: upErr } = await uploadFileRobust('customer-documents', path, receiptFile, toast);
         if (upErr) throw upErr;
         receiptPath = path;
       }

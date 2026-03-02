@@ -525,7 +525,7 @@ export default function Customers() {
                                 <label className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
                                   <FileImage className="w-3.5 h-3.5 text-slate-400" />
                                   <span className="text-slate-300 truncate">{editFiles.ic?.name || 'Choose IC image...'}</span>
-                                  <input type="file" accept="image/*,.pdf,.heic,.heif" className="hidden" onChange={e => setEditFiles(f => ({...f, ic: e.target.files[0]}))} />
+                                  <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => setEditFiles(f => ({...f, ic: e.target.files[0]}))} />
                                 </label>
                               </div>
                               <div>
@@ -533,7 +533,7 @@ export default function Customers() {
                                 <label className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs bg-white/5 border border-white/10 cursor-pointer hover:bg-white/10 transition-colors">
                                   <FileImage className="w-3.5 h-3.5 text-slate-400" />
                                   <span className="text-slate-300 truncate">{editFiles.licence?.name || 'Choose licence image...'}</span>
-                                  <input type="file" accept="image/*,.pdf,.heic,.heif" className="hidden" onChange={e => setEditFiles(f => ({...f, licence: e.target.files[0]}))} />
+                                  <input type="file" accept="image/*,.pdf" className="hidden" onChange={e => setEditFiles(f => ({...f, licence: e.target.files[0]}))} />
                                 </label>
                               </div>
                             </div>
@@ -738,7 +738,7 @@ export default function Customers() {
                                   // Upload receipt
                                   const ext = addCreditForm.receipt.name.split('.').pop();
                                   const receiptPath = `${customer.id}/credit_receipt_${Date.now()}.${ext}`;
-                                  const { error: upErr } = await supabase.storage.from('customer-documents').upload(receiptPath, addCreditForm.receipt);
+                                  const { error: upErr } = await uploadFileRobust('customer-documents', receiptPath, addCreditForm.receipt, toast);
                                   if (upErr) throw upErr;
 
                                   // Update credit balance

@@ -12,6 +12,14 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
         try {
             if (toast) toast.info('Step 1: Preparing file...');
 
+            // 0. Pre-flight checks
+            if (file.name.match(/\.(heic|heif)$/i) || file.type.match(/heic|heif/i)) {
+                return resolve({ data: null, error: new Error('HEIC format not supported. Please change camera settings to JPEG or use a different file.') });
+            }
+            if (file.size > 10 * 1024 * 1024) {
+                return resolve({ data: null, error: new Error(`File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max allowed size is 10MB.`) });
+            }
+
             const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
             if (sessionErr || !session) {
                 return resolve({ data: null, error: new Error('Not authenticated. Please log in again.') });
@@ -40,7 +48,7 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
             xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
             xhr.setRequestHeader('x-upsert', 'false'); // Critical: true causes RLS hangs on insert-only buckets
 
-            xhr.timeout = 60000; // 60s timeout
+            xhr.timeout = 90000; // 90s timeout for slower mobile networks
 
             if (toast) {
                 xhr.upload.onprogress = (e) => {
@@ -76,8 +84,8 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
             };
 
             xhr.ontimeout = () => {
-                console.error('[UploadHelper] XHR timeout after 60s.');
-                resolve({ data: null, error: new Error('Upload timed out after 60s.') });
+                console.error('[UploadHelper] XHR timeout after 90s.');
+                resolve({ data: null, error: new Error('Upload timed out after 90s. Please check your network connection.') });
             };
 
             // Send raw bytes, NOT the File object!

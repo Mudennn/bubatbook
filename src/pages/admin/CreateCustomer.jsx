@@ -4,6 +4,7 @@ import AdminLayout from '../../components/AdminLayout';
 import { useAuth } from '../../hooks/useAuth';
 import { useFleet } from '../../hooks/useFleet';
 import { supabase } from '../../lib/supabase';
+import { uploadFileRobust } from '../../lib/uploadHelper';
 import { useToast } from '../../components/Toast';
 import { normalizePhone, isValidMYPhone } from '../../utils/phoneUtils';
 import {
@@ -68,16 +69,12 @@ export default function CreateCustomer() {
 
       // Upload IC image
       const icPath = `verification/${profileId}/ic_${Date.now()}.${icFile.name.split('.').pop()}`;
-      const { error: icUpErr } = await supabase.storage
-        .from('documents')
-        .upload(icPath, icFile);
+      const { error: icUpErr } = await uploadFileRobust('documents', icPath, icFile, toast);
       if (icUpErr) throw new Error('IC upload failed: ' + icUpErr.message);
 
       // Upload licence image
       const licPath = `verification/${profileId}/licence_${Date.now()}.${licenceFile.name.split('.').pop()}`;
-      const { error: licUpErr } = await supabase.storage
-        .from('documents')
-        .upload(licPath, licenceFile);
+      const { error: licUpErr } = await uploadFileRobust('documents', licPath, licenceFile, toast);
       if (licUpErr) throw new Error('Licence upload failed: ' + licUpErr.message);
 
       // Create profile

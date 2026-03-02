@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useBookings, cancelBooking } from '../hooks/useBookings';
 import { supabase } from '../lib/supabase';
+import { uploadFileRobust } from '../lib/uploadHelper';
 import { useToast } from '../components/Toast';
 import BookingStatusBadge from '../components/BookingStatusBadge';
 import LoadingSpinner from '../components/LoadingSpinner';
@@ -39,7 +40,7 @@ export default function MyBookings() {
     try {
       const ext = receiptFile.name.split('.').pop();
       const path = `receipts/${bookingId}/full_payment_${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from('customer-documents').upload(path, receiptFile);
+      const { error: upErr } = await uploadFileRobust('customer-documents', path, receiptFile, toast);
       if (upErr) throw upErr;
       const { error } = await supabase.from('bubatrent_booking_bookings')
         .update({ full_payment_receipt_path: path, full_payment_status: 'uploaded' })
