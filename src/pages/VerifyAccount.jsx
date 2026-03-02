@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { supabase } from '../lib/supabase';
+import { uploadFileRobust } from '../lib/uploadHelper';
 import { useToast } from '../components/Toast';
 import {
   FileCheck, Shield, Upload, FileImage, Loader2,
@@ -42,9 +43,7 @@ export default function VerifyAccount() {
   async function uploadFile(file, folder) {
     const ext = file.name.split('.').pop().replace(/[^a-zA-Z0-9]/g, '');
     const filePath = `profiles/${user.id}/${folder}_${Date.now()}.${ext}`;
-    const { error: uploadErr } = await supabase.storage
-      .from('customer-documents')
-      .upload(filePath, file, { upsert: false });
+    const { error: uploadErr } = await uploadFileRobust('customer-documents', filePath, file, toast);
     if (uploadErr) throw uploadErr;
     return filePath;
   }

@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../../components/Toast';
 import { supabase } from '../../lib/supabase';
+import { uploadFileRobust } from '../../lib/uploadHelper';
 
 const ROLE_OPTIONS = ['ALL', 'customer', 'admin', 'super_admin'];
 
@@ -567,7 +568,7 @@ export default function Customers() {
                                     const ext = editFiles.ic.name.split('.').pop()?.toLowerCase() || 'jpg';
                                     const path = `${customer.id}/ic_admin_${Date.now()}.${ext}`;
                                     
-                                    const { error: upErr } = await supabase.storage.from('customer-documents').upload(path, editFiles.ic, { upsert: false });
+                                    const { error: upErr } = await uploadFileRobust('customer-documents', path, editFiles.ic, toast);
                                     if (upErr) throw new Error(`IC upload failed: ${upErr.message}`);
                                     
                                     console.log('[EditSave] IC uploaded to:', path);
@@ -580,7 +581,7 @@ export default function Customers() {
                                     const ext = editFiles.licence.name.split('.').pop()?.toLowerCase() || 'jpg';
                                     const path = `${customer.id}/licence_admin_${Date.now()}.${ext}`;
                                     
-                                    const { error: upErr } = await supabase.storage.from('customer-documents').upload(path, editFiles.licence, { upsert: false });
+                                    const { error: upErr } = await uploadFileRobust('customer-documents', path, editFiles.licence, toast);
                                     if (upErr) throw new Error(`Licence upload failed: ${upErr.message}`);
                                     
                                     console.log('[EditSave] Licence uploaded to:', path);

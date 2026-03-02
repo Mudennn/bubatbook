@@ -4,6 +4,7 @@ import LoadingSpinner from '../../components/LoadingSpinner';
 import { useAuth } from '../../hooks/useAuth';
 import { useFleet } from '../../hooks/useFleet';
 import { supabase } from '../../lib/supabase';
+import { uploadFileRobust } from '../../lib/uploadHelper';
 import { useToast } from '../../components/Toast';
 import { formatMYR } from '../../utils/pricing';
 import { formatDate } from '../../utils/dates';
@@ -80,7 +81,7 @@ export default function AdminExpenses() {
       for (const file of formFiles) {
         const ext = file.name.split('.').pop();
         const path = `expenses/${claim.id}/${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
-        const { error: upErr } = await supabase.storage.from('customer-documents').upload(path, file);
+        const { error: upErr } = await uploadFileRobust('customer-documents', path, file, toast);
         if (upErr) throw upErr;
         const { error: imgErr } = await supabase.from('bubatrent_booking_expense_images')
           .insert({ claim_id: claim.id, file_path: path });
@@ -104,7 +105,7 @@ export default function AdminExpenses() {
     try {
       const ext = receiptFile.name.split('.').pop();
       const path = `expenses/${claimId}/receipt_${Date.now()}.${ext}`;
-      const { error: upErr } = await supabase.storage.from('customer-documents').upload(path, receiptFile);
+      const { error: upErr } = await uploadFileRobust('customer-documents', path, receiptFile, toast);
       if (upErr) throw upErr;
 
       const { error } = await supabase.from('bubatrent_booking_expense_claims').update({
