@@ -6,11 +6,11 @@ async function run() {
     const c = new Client('postgresql://postgres:Ssy%40rief.1234@db.blqsgijvdvzwnqeltoje.supabase.co:5432/postgres');
     await c.connect();
 
-    const sql = fs.readFileSync(path.join(__dirname, 'migrations', 'add_governance.sql'), 'utf8');
+    const sql = fs.readFileSync(path.join(__dirname, 'migrations', 'fix_fleet_groups_update_policy.sql'), 'utf8');
 
     try {
         await c.query(sql);
-        console.log('✓ Governance migration completed');
+        console.log('✓ Fleet groups UPDATE policy migration completed');
     } catch (err) {
         console.error('✗ Migration failed:', err.message);
     }

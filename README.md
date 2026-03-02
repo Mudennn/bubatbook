@@ -236,6 +236,27 @@ When testing on Android devices, verify the following:
 
 ---
 
+## 🏢 Multi-Tenant & Group Management
+
+Rent2Go uses a multi-tenant architecture where different businesses (Fleet Groups) can manage their own cars and bookings on the platform.
+
+### Switching Group Context
+If you are a **Super Admin** or belong to multiple groups, you can switch your active group using the **dropdown selector in the top-right Admin Navbar**.
+* Every action you take (adding cars, viewing bookings, adding members) is automatically tied to the group currently selected in this dropdown.
+
+### How to Assign an Admin to a Group
+1. Switch to the target group in the top-right Navbar dropdown.
+2. Go to **Admin -> Members**.
+3. Search for the customer's email or phone number.
+4. Select the user, choose the "Fleet Admin" role, and click Add.
+
+### How to Ensure Added Vehicles Belong to a Group
+1. Switch to the target group in the top-right Navbar dropdown.
+2. Go to **Admin -> Fleet -> Add New Car**.
+3. Fill in the car details and save. The car is **automatically assigned** to the group you selected in Step 1.
+
+---
+
 ## 📧 Contact
 
 - **Company:** Bubat Resources
