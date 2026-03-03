@@ -60,7 +60,7 @@ export function useCar(id) {
             try {
                 setLoading(true);
                 // Single car fetch also uses direct REST to avoid lock
-                const url = `${SUPABASE_URL}/rest/v1/bubatrent_booking_cars?id=eq.${id}&select=*`;
+                const url = `${SUPABASE_URL}/rest/v1/bubatrent_booking_cars?id=eq.${id}&select=*,bubatrent_booking_fleet_groups(support_whatsapp)`;
                 const res = await fetch(url, {
                     headers: {
                         apikey: SUPABASE_KEY,

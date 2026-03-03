@@ -369,9 +369,21 @@ export default function Checkout() {
               {/* Receipt upload (if payment needed) */}
               {amountDue > 0 ? (
                 <>
-                  <p className="text-xs text-slate-500 mb-3">
-                    Transfer <span className="text-white font-semibold">{formatMYR(amountDue)}</span> to our bank account, then upload the receipt below.
-                  </p>
+                  <div className="text-xs text-slate-400 mb-4 bg-white/5 p-3 rounded-xl border border-white/10">
+                    <span className="block mb-2 text-white font-medium">Payment Instructions:</span>
+                    <ol className="list-decimal pl-4 space-y-1.5">
+                      <li>
+                        Please <a 
+                          href={car?.bubatrent_booking_fleet_groups?.support_whatsapp ? `https://wa.me/${car.bubatrent_booking_fleet_groups.support_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi, I would like to pay the deposit of ${formatMYR(amountDue)} for booking ${car.brand} ${car.model}. Please provide the bank account details.`)}` : '#'} 
+                          target="_blank" 
+                          rel="noreferrer" 
+                          className="text-green-400 hover:text-green-300 hover:underline font-medium"
+                        >WhatsApp our admin</a> to get the bank account details.
+                      </li>
+                      <li>Transfer <span className="text-white font-semibold">{formatMYR(amountDue)}</span> to the provided account.</li>
+                      <li>Upload your payment receipt below to secure your booking.</li>
+                    </ol>
+                  </div>
                   <label className="flex items-center gap-3 px-4 py-6 rounded-xl border-2 border-dashed border-white/10 hover:border-violet-500/30 cursor-pointer transition-colors mb-6">
                     <FileImage className="w-6 h-6 text-slate-500" />
                     <div>
