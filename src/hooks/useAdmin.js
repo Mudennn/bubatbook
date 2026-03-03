@@ -259,13 +259,11 @@ export function useAdminCustomers(filters = {}) {
                 .select('*')
                 .order('created_at', { ascending: false });
 
-            // Role filter — BUG FIX: 'ALL' now means 'all customers only'
+            // Role filter — 'ALL' shows everyone including admins
             if (filters.role && filters.role !== 'ALL') {
                 query = query.eq('role', filters.role.toLowerCase());
-            } else {
-                // Default: exclude admin and super_admin from customer list
-                query = query.eq('role', 'customer');
             }
+            // When 'ALL', no role filter is applied — shows all users
 
             // Search filter
             if (filters.search) {
