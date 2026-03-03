@@ -244,9 +244,9 @@ export default function AdminBookingDetail() {
 
     setDeleting(true);
     try {
-      // Delete related payments
+      // Delete related records in dependency order
+      await supabase.from('bubatrent_booking_credit_transactions').delete().eq('booking_id', id);
       await supabase.from('bubatrent_booking_payments').delete().eq('booking_id', id);
-      // Delete related audit logs
       await supabase.from('bubatrent_booking_audit_logs').delete().eq('resource_id', id);
       // Delete the booking itself
       const { error } = await supabase.from('bubatrent_booking_bookings').delete().eq('id', id);
