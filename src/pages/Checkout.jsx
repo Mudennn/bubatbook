@@ -11,7 +11,7 @@ import { calculatePrice, formatMYR } from '../utils/pricing';
 import { formatDate, formatTimeRemaining } from '../utils/dates';
 import {
   ArrowLeft, Clock, CheckCircle, AlertTriangle, Shield,
-  ChevronRight, FileCheck, Upload, FileImage, Loader2, Wallet
+  ChevronRight, FileCheck, Upload, FileImage, Loader2, Wallet, MessageCircle
 } from 'lucide-react';
 import { useToast } from '../components/Toast';
 
@@ -384,6 +384,17 @@ export default function Checkout() {
                       <li>Upload your payment receipt below to secure your booking.</li>
                     </ol>
                   </div>
+                  
+                  <a 
+                    href={car?.bubatrent_booking_fleet_groups?.support_whatsapp ? `https://wa.me/${car.bubatrent_booking_fleet_groups.support_whatsapp.replace(/\D/g, '')}?text=${encodeURIComponent(`Hi ${car.bubatrent_booking_fleet_groups.name || 'Admin'}, I would like to pay the deposit of ${formatMYR(amountDue)} for booking ${car.brand} ${car.model}. Please provide the bank account details.`)}` : '#'} 
+                    target="_blank" 
+                    rel="noreferrer" 
+                    className="flex items-center justify-center gap-2 w-full py-3.5 mb-6 bg-[#25D366] hover:bg-[#20BE5C] text-white rounded-xl font-medium transition-all shadow-lg hover:shadow-[#25D366]/30 hover:-translate-y-0.5"
+                  >
+                    <MessageCircle className="w-5 h-5" />
+                    <span>WhatsApp Admin for Bank Details</span>
+                  </a>
+
                   <label className="flex items-center gap-3 px-4 py-6 rounded-xl border-2 border-dashed border-white/10 hover:border-violet-500/30 cursor-pointer transition-colors mb-6">
                     <FileImage className="w-6 h-6 text-slate-500" />
                     <div>
