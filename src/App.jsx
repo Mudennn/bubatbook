@@ -36,6 +36,7 @@ const ChangeRequests = lazy(() => import('./pages/admin/ChangeRequests'));
 const GroupMembers = lazy(() => import('./pages/admin/GroupMembers'));
 const CreateCustomer = lazy(() => import('./pages/admin/CreateCustomer'));
 const AdminBookForCustomer = lazy(() => import('./pages/admin/AdminBookForCustomer'));
+const UserManual = lazy(() => import('./pages/admin/UserManual'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function ProtectedRoute({ children }) {
@@ -97,6 +98,7 @@ function AppRoutes() {
             <Route path="/admin/fleet/members" element={<AdminRoute><GroupMembers /></AdminRoute>} />
             <Route path="/admin/groups" element={<AdminRoute><GroupManagement /></AdminRoute>} />
             <Route path="/admin/change-requests" element={<AdminRoute><ChangeRequests /></AdminRoute>} />
+            <Route path="/admin/manual" element={<AdminRoute><UserManual /></AdminRoute>} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
