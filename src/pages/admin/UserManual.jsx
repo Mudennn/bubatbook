@@ -1,5 +1,5 @@
 import AdminLayout from '../../components/AdminLayout';
-import { BookOpen, Car, CalendarDays, Users, DollarSign, Wallet, AlertTriangle, MessageCircle } from 'lucide-react';
+import { BookOpen, Car, CalendarDays, Users, DollarSign, Wallet, AlertTriangle, MessageCircle, FileSignature } from 'lucide-react';
 
 export default function UserManual() {
   return (
@@ -127,6 +127,26 @@ export default function UserManual() {
           <div className="space-y-3 text-sm text-slate-300">
             <p><strong>Sales:</strong> The <span className="text-white font-medium">Sales</span> dashboard aggregates all finalized payments (confirmed deposits and full payments). It only counts hard revenue, not pending holds.</p>
             <p><strong>Expenses:</strong> If you spend money on fleet maintenance (e.g., fuel, washing, repairs, insurance), log it in the <span className="text-white font-medium">Expenses</span> tab. This will accurately calculate your Net Profit in the main dashboard.</p>
+          </div>
+        </section>
+
+        {/* 6. Rental Agreement */}
+        <section className="glass-card">
+          <div className="flex items-center gap-3 mb-4 text-white font-semibold text-lg border-b border-white/10 pb-3">
+            <FileSignature className="w-5 h-5 text-cyan-400" />
+            <h3>6. Digital Rental Agreement</h3>
+          </div>
+          <div className="space-y-3 text-sm text-slate-300">
+            <p>Every booking requires the customer to sign a <strong>digital rental agreement</strong> before the vehicle can be marked as "Picked Up".</p>
+            <h4 className="text-white font-medium mt-2">How it works:</h4>
+            <ol className="list-decimal pl-5 space-y-1.5">
+              <li>When a booking reaches <span className="text-green-400 font-medium">CONFIRMED</span> status, you will see an agreement status card in the Booking Detail page.</li>
+              <li>Click <span className="text-violet-400 font-medium">"Copy Agreement Link"</span> to get a shareable URL.</li>
+              <li>Send the link to the customer (e.g., via WhatsApp). They open it, review the auto-filled rental details and full T&C, then draw their signature and submit.</li>
+              <li>Once signed, the agreement card turns <span className="text-green-400">green</span> and shows the customer's signature image.</li>
+              <li>You can now proceed to mark the booking as <span className="text-emerald-400 font-medium">PICKUP</span>.</li>
+            </ol>
+            <p className="text-xs text-slate-500 mt-2">The signed agreement includes a timestamp and is stored permanently in the database for legal protection.</p>
           </div>
         </section>
 

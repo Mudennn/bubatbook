@@ -15,7 +15,7 @@ import { maskSensitive } from '../../utils/format';
 import {
   ArrowLeft, User, Mail, Phone, FileText, Shield, CheckCircle,
   Clock, Eye, FileCheck, Edit3, Save, X, Upload, FileImage,
-  Wallet, AlertTriangle, CarFront, Calendar, Trash2
+  Wallet, AlertTriangle, CarFront, Calendar, Trash2, ClipboardCopy, FileSignature
 } from 'lucide-react';
 
 // Status flow definition
@@ -41,6 +41,7 @@ export default function AdminBookingDetail() {
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [agreement, setAgreement] = useState(null);
 
   // Date editing
   const [editingDates, setEditingDates] = useState(false);
@@ -82,14 +83,16 @@ export default function AdminBookingDetail() {
         setEditPickup(bookingData.pickup_date);
         setEditReturn(bookingData.return_date);
 
-        // Fetch docs and logs in parallel — don't fail the whole page if these error
+        // Fetch docs, logs, and agreement in parallel
         try {
-          const [docsData, logsData] = await Promise.all([
+          const [docsData, logsData, agreementData] = await Promise.all([
             getBookingDocuments(id, user.id).catch(err => { console.warn('[BookingDetail] Docs error:', err); return []; }),
             getAuditLogs(id).catch(err => { console.warn('[BookingDetail] Logs error:', err); return []; }),
+            supabase.from('bubatrent_booking_rental_agreements').select('id, agreed_at, customer_name, signature_data').eq('booking_id', id).maybeSingle().then(r => r.data).catch(() => null),
           ]);
           setDocuments(docsData);
           setAuditLogs(logsData);
+          setAgreement(agreementData);
         } catch (subErr) {
           console.warn('[BookingDetail] Error fetching docs/logs:', subErr);
         }
@@ -103,8 +106,20 @@ export default function AdminBookingDetail() {
     fetchAll();
   }, [id, user.id, activeFleetId]);
 
+  function copyAgreementLink() {
+    const url = `${window.location.origin}/booking/${id}/agreement`;
+    navigator.clipboard.writeText(url);
+    toast.success('Agreement link copied! Share with the customer via WhatsApp.');
+  }
+
   async function handleStatusChange(newStatus) {
     try {
+      // Block PICKUP unless agreement is signed
+      if (newStatus === 'PICKUP' && !agreement) {
+        toast.error('Cannot mark as Picked Up — rental agreement has not been signed yet. Send the agreement link to the customer first.');
+        return;
+      }
+
       // Block PICKUP unless full payment is received
       if (newStatus === 'PICKUP') {
         const payments = booking.bubatrent_booking_payments || [];
@@ -325,6 +340,36 @@ export default function AdminBookingDetail() {
           </button>
         </div>
       </div>
+
+      {/* Rental Agreement Status Card */}
+      {['CONFIRMED', 'PICKUP', 'RETURNED'].includes(booking.status) && (
+        <div className={`glass-card mb-6 flex flex-col sm:flex-row items-start sm:items-center gap-4 ${agreement ? 'border-green-500/20 bg-green-500/5' : 'border-amber-500/20 bg-amber-500/5'}`}>
+          <div className="flex items-center gap-3 flex-1">
+            <FileSignature className={`w-6 h-6 shrink-0 ${agreement ? 'text-green-400' : 'text-amber-400'}`} />
+            <div>
+              <p className={`text-sm font-medium ${agreement ? 'text-green-300' : 'text-amber-300'}`}>
+                {agreement ? 'Rental Agreement Signed' : 'Rental Agreement Not Signed'}
+              </p>
+              <p className="text-xs text-slate-500">
+                {agreement ? `Signed by ${agreement.customer_name} on ${new Date(agreement.agreed_at).toLocaleString()}` : 'Customer must sign the agreement before vehicle pickup.'}
+              </p>
+            </div>
+          </div>
+          {!agreement && (
+            <button onClick={copyAgreementLink}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium bg-violet-500/10 text-violet-400 hover:bg-violet-500/20 transition-colors whitespace-nowrap"
+            >
+              <ClipboardCopy className="w-4 h-4" />
+              Copy Agreement Link
+            </button>
+          )}
+          {agreement?.signature_data && (
+            <div className="bg-white rounded-lg p-2 w-32 h-16">
+              <img src={agreement.signature_data} alt="Signature" className="w-full h-full object-contain" />
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Reactivation Modal */}
       {showReactivate && (

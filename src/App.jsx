@@ -37,6 +37,7 @@ const GroupMembers = lazy(() => import('./pages/admin/GroupMembers'));
 const CreateCustomer = lazy(() => import('./pages/admin/CreateCustomer'));
 const AdminBookForCustomer = lazy(() => import('./pages/admin/AdminBookForCustomer'));
 const UserManual = lazy(() => import('./pages/admin/UserManual'));
+const RentalAgreement = lazy(() => import('./pages/RentalAgreement'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
 function ProtectedRoute({ children }) {
@@ -84,6 +85,7 @@ function AppRoutes() {
             <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
             <Route path="/booking/:id/confirmation" element={<ProtectedRoute><BookingConfirmation /></ProtectedRoute>} />
             <Route path="/booking/:id/documents" element={<ProtectedRoute><DocumentUploadPage /></ProtectedRoute>} />
+            <Route path="/booking/:id/agreement" element={<ProtectedRoute><RentalAgreement /></ProtectedRoute>} />
             <Route path="/my-bookings" element={<ProtectedRoute><MyBookings /></ProtectedRoute>} />
             <Route path="/admin" element={<AdminRoute><AdminDashboard /></AdminRoute>} />
             <Route path="/admin/cars" element={<AdminRoute><AdminCars /></AdminRoute>} />
