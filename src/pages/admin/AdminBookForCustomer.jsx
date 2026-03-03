@@ -47,11 +47,12 @@ export default function AdminBookForCustomer() {
     setCustSearch(q);
     if (q.length < 2) { setCustResults([]); return; }
     setSearching(true);
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('bubatrent_booking_profiles')
-      .select('id, display_name, username, email, phone, ic_number, is_verified')
-      .or(`display_name.ilike.%${q}%,phone.ilike.%${q}%,ic_number.ilike.%${q}%,email.ilike.%${q}%`)
+      .select('id, display_name, username, phone, ic_number, is_verified')
+      .or(`display_name.ilike.%${q}%,phone.ilike.%${q}%,ic_number.ilike.%${q}%,username.ilike.%${q}%`)
       .limit(10);
+    if (error) console.error('[BookForCustomer] Search error:', error);
     setCustResults(data || []);
     setSearching(false);
   }
