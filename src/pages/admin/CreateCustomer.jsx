@@ -100,7 +100,6 @@ export default function CreateCustomer() {
           is_verified: true,
           verified_by: user.id,
           verified_at: new Date().toISOString(),
-          created_by_admin: user.id,
           role: 'customer',
           credit_balance: 0,
         });
