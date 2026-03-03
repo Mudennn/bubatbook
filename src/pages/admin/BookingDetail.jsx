@@ -105,6 +105,20 @@ export default function AdminBookingDetail() {
 
   async function handleStatusChange(newStatus) {
     try {
+      // Block PICKUP unless full payment is received
+      if (newStatus === 'PICKUP') {
+        const payments = booking.bubatrent_booking_payments || [];
+        const totalPaid = payments
+          .filter(p => p.status === 'completed')
+          .reduce((sum, p) => sum + Number(p.amount || 0), 0);
+        const totalPrice = Number(booking.total_price || 0);
+        if (totalPaid < totalPrice) {
+          const outstanding = totalPrice - totalPaid;
+          toast.error(`Cannot mark as Picked Up — full payment required. Outstanding: RM ${outstanding.toFixed(2)} (Paid: RM ${totalPaid.toFixed(2)} / Total: RM ${totalPrice.toFixed(2)})`);
+          return;
+        }
+      }
+
       const updates = { status: newStatus };
       // When marking as RETURNED, set actual_return_date
       if (newStatus === 'RETURNED') {
