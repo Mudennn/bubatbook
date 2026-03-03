@@ -166,7 +166,6 @@ export default function AdminBookForCustomer() {
           deposit_amount: depositAmount,
           status: initialStatus,
           fleet_group_id: activeFleetId,
-          created_by_admin: user.id,
           customer_name: selectedCust.display_name || '',
           customer_email: selectedCust.username || '',
           customer_phone: selectedCust.phone || '',
@@ -180,11 +179,10 @@ export default function AdminBookForCustomer() {
         await supabase.from('bubatrent_booking_payments').insert({
           booking_id: booking.id,
           amount: depositAmount,
-          type: 'deposit',
+          payment_method: 'bank_transfer',
           status: 'completed',
-          receipt_url: receiptUrl,
+          reference_number: `ADMIN-${Date.now()}`,
           fleet_group_id: activeFleetId,
-          verified_by: user.id,
         });
       }
 
