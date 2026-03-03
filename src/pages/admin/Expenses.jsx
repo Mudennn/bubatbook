@@ -10,7 +10,7 @@ import { formatMYR } from '../../utils/pricing';
 import { formatDate } from '../../utils/dates';
 import {
   Receipt, Plus, Upload, CheckCircle, Clock, Car, FileImage,
-  Loader2, X, ChevronDown, ChevronUp, Filter
+  Loader2, X, ChevronDown, ChevronUp, Filter, Trash2
 } from 'lucide-react';
 
 export default function AdminExpenses() {
@@ -36,6 +36,7 @@ export default function AdminExpenses() {
   // Payment receipt state
   const [receiptFile, setReceiptFile] = useState(null);
   const [completingId, setCompletingId] = useState(null);
+  const [deletingId, setDeletingId] = useState(null);
 
   useEffect(() => { fetchData(); }, [activeFleetId]);
 
@@ -123,6 +124,30 @@ export default function AdminExpenses() {
       toast.error(err.message);
     } finally {
       setCompletingId(null);
+    }
+  }
+
+  async function handleDeleteClaim(claim) {
+    if (!window.confirm(`Delete claim "${claim.description}"? This cannot be undone.`)) return;
+    setDeletingId(claim.id);
+    try {
+      // Clean up storage files (invoice images + receipt)
+      const paths = (claim.bubatrent_booking_expense_images || []).map(img => img.file_path);
+      if (claim.payment_receipt_path) paths.push(claim.payment_receipt_path);
+      if (paths.length > 0) {
+        await supabase.storage.from('customer-documents').remove(paths);
+      }
+      // Delete the claim (images cascade-delete)
+      const { error } = await supabase.from('bubatrent_booking_expense_claims')
+        .delete().eq('id', claim.id);
+      if (error) throw error;
+      toast.success('Claim deleted.');
+      setExpanded(null);
+      await fetchData();
+    } catch (err) {
+      toast.error(err.message);
+    } finally {
+      setDeletingId(null);
     }
   }
 
@@ -259,18 +284,26 @@ export default function AdminExpenses() {
 
                   {/* Complete claim */}
                   {claim.status === 'pending' && (
-                    <div className="flex items-center gap-3">
-                      <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>{receiptFile ? receiptFile.name : 'Upload payment receipt'}</span>
-                        <input type="file" accept="image/*,.pdf" className="hidden"
-                          onChange={e => setReceiptFile(e.target.files[0])} />
-                      </label>
-                      <button onClick={() => handleCompleteClaim(claim.id)}
-                        disabled={completingId === claim.id}
-                        className="btn-primary !px-3 !py-1.5 text-xs flex items-center gap-1">
-                        {completingId === claim.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
-                        Mark Complete
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 text-xs text-slate-400 cursor-pointer">
+                          <Upload className="w-3.5 h-3.5" />
+                          <span>{receiptFile ? receiptFile.name : 'Upload payment receipt'}</span>
+                          <input type="file" accept="image/*,.pdf" className="hidden"
+                            onChange={e => setReceiptFile(e.target.files[0])} />
+                        </label>
+                        <button onClick={() => handleCompleteClaim(claim.id)}
+                          disabled={completingId === claim.id}
+                          className="btn-primary !px-3 !py-1.5 text-xs flex items-center gap-1">
+                          {completingId === claim.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                          Mark Complete
+                        </button>
+                      </div>
+                      <button onClick={() => handleDeleteClaim(claim)}
+                        disabled={deletingId === claim.id}
+                        className="flex items-center gap-1 text-xs text-red-400 hover:text-red-300 transition-colors disabled:opacity-50">
+                        {deletingId === claim.id ? <Loader2 className="w-3 h-3 animate-spin" /> : <Trash2 className="w-3 h-3" />}
+                        Delete Claim
                       </button>
                     </div>
                   )}
