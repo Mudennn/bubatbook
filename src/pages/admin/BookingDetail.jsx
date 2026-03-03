@@ -363,9 +363,18 @@ export default function AdminBookingDetail() {
               Copy Agreement Link
             </button>
           )}
-          {agreement?.signature_data && (
-            <div className="bg-white rounded-lg p-2 w-32 h-16">
-              <img src={agreement.signature_data} alt="Signature" className="w-full h-full object-contain" />
+          {agreement && (
+            <div className="flex items-center gap-3">
+              {agreement.signature_data && (
+                <div className="bg-white rounded-lg p-2 w-32 h-16">
+                  <img src={agreement.signature_data} alt="Signature" className="w-full h-full object-contain" />
+                </div>
+              )}
+              <a href={`/booking/${id}/agreement`} target="_blank" rel="noreferrer"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium bg-green-500/10 text-green-400 hover:bg-green-500/20 transition-colors whitespace-nowrap"
+              >
+                <Eye className="w-3.5 h-3.5" /> View Full Agreement
+              </a>
             </div>
           )}
         </div>

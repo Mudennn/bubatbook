@@ -20,7 +20,7 @@ const LIABILITY_TABLE = [
 
 export default function RentalAgreement() {
   const { id } = useParams(); // booking id
-  const { user, profile } = useAuth();
+  const { user, profile, isAdmin } = useAuth();
   const navigate = useNavigate();
   const toast = useToast();
 
@@ -30,25 +30,32 @@ export default function RentalAgreement() {
   const [signatureData, setSignatureData] = useState(null);
   const [existingAgreement, setExistingAgreement] = useState(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   useEffect(() => {
     async function fetchBooking() {
       try {
         // Fetch booking with car info
-        const { data: bookingData, error: bErr } = await supabase
+        let query = supabase
           .from('bubatrent_booking_bookings')
           .select('*, bubatrent_booking_cars(*)')
-          .eq('id', id)
-          .eq('user_id', user.id)
-          .maybeSingle();
+          .eq('id', id);
+
+        // Non-admins can only view their own bookings
+        if (!isAdmin) {
+          query = query.eq('user_id', user.id);
+        }
+
+        const { data: bookingData, error: bErr } = await query.maybeSingle();
 
         if (bErr) throw bErr;
         if (!bookingData) {
           toast.error('Booking not found or access denied.');
-          navigate('/my-bookings');
+          navigate(isAdmin ? '/admin/bookings' : '/my-bookings');
           return;
         }
         setBooking(bookingData);
+        setIsOwner(bookingData.user_id === user.id);
 
         // Check if already signed
         const { data: agreement } = await supabase
