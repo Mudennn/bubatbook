@@ -69,12 +69,12 @@ export default function CreateCustomer() {
 
       // Upload IC image
       const icPath = `verification/${profileId}/ic_${Date.now()}.${icFile.name.split('.').pop()}`;
-      const { error: icUpErr } = await uploadFileRobust('documents', icPath, icFile, toast);
+      const { error: icUpErr } = await uploadFileRobust('customer-documents', icPath, icFile, toast);
       if (icUpErr) throw new Error('IC upload failed: ' + icUpErr.message);
 
       // Upload licence image
       const licPath = `verification/${profileId}/licence_${Date.now()}.${licenceFile.name.split('.').pop()}`;
-      const { error: licUpErr } = await uploadFileRobust('documents', licPath, licenceFile, toast);
+      const { error: licUpErr } = await uploadFileRobust('customer-documents', licPath, licenceFile, toast);
       if (licUpErr) throw new Error('Licence upload failed: ' + licUpErr.message);
 
       // Create profile
