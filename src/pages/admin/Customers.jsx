@@ -568,7 +568,7 @@ export default function Customers() {
                                     const path = `${customer.id}/ic_admin_${Date.now()}.${ext}`;
 
                                     addDebugLog(`Uploading IC to: ${path}`);
-                                    const { error: upErr } = await uploadFileRobust('customer-documents', path, editFiles.ic, toast);
+                                    const { error: upErr } = await uploadFileRobust('customer-documents', path, editFiles.ic, toast, addDebugLog);
                                     if (upErr) {
                                       addDebugLog(`IC upload ERROR: ${upErr.message}`);
                                       throw new Error(`IC upload failed: ${upErr.message}`);
@@ -587,7 +587,7 @@ export default function Customers() {
                                     const path = `${customer.id}/licence_admin_${Date.now()}.${ext}`;
 
                                     addDebugLog(`Uploading licence to: ${path}`);
-                                    const { error: upErr } = await uploadFileRobust('customer-documents', path, editFiles.licence, toast);
+                                    const { error: upErr } = await uploadFileRobust('customer-documents', path, editFiles.licence, toast, addDebugLog);
                                     if (upErr) {
                                       addDebugLog(`Licence upload ERROR: ${upErr.message}`);
                                       throw new Error(`Licence upload failed: ${upErr.message}`);

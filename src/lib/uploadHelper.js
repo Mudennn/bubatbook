@@ -33,7 +33,7 @@ async function logUploadStep(step, message, metadata = {}) {
  * 4. Logs each step to bubatrent_booking_upload_logs for remote debugging.
  * 5. Warns users when files exceed 5MB (still allows up to 10MB max).
  */
-export async function uploadFileRobust(bucket, path, file, toast = null) {
+export async function uploadFileRobust(bucket, path, file, toast = null, onDebugLog = null) {
     // Extract booking_id from path if possible (e.g. receipts/{bookingId}/...)
     const bookingIdMatch = path.match(/(?:receipts|documents|uploads)\/([a-f0-9-]+)\//i);
     const booking_id = bookingIdMatch ? bookingIdMatch[1] : null;
@@ -82,9 +82,10 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
             console.log(`[UploadHelper] About to fetch with POST to ${url}`);
 
             try {
-                console.log(`[UploadHelper] Fetch URL: ${url}`);
-                console.log(`[UploadHelper] Auth token present: ${!!session.access_token}`);
-                console.log(`[UploadHelper] API key present: ${!!import.meta.env.VITE_SUPABASE_ANON_KEY}`);
+                if (onDebugLog) onDebugLog(`Fetch URL: ${url}`);
+                if (onDebugLog) onDebugLog(`Auth token: ${!!session.access_token ? 'YES' : 'NO'}`);
+                if (onDebugLog) onDebugLog(`API key: ${!!import.meta.env.VITE_SUPABASE_ANON_KEY ? 'YES' : 'NO'}`);
+                if (onDebugLog) onDebugLog(`Sending POST request...`);
 
                 const response = await fetch(url, {
                     method: 'POST',
@@ -98,14 +99,15 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
                 });
 
                 clearTimeout(timeoutId);
+                if (onDebugLog) onDebugLog(`Response received! HTTP ${response.status}`);
                 console.log(`[UploadHelper] Fetch response received: HTTP ${response.status}`);
 
                 if (response.status >= 200 && response.status < 300) {
+                    if (onDebugLog) onDebugLog(`✅ Upload success!`);
                     console.log(`[UploadHelper] Upload success! HTTP ${response.status}`);
                     logUploadStep('success', `Upload complete! HTTP ${response.status}`, { ...logMeta, httpStatus: response.status });
                     resolve({ data: { path }, error: null });
                 } else {
-                    console.error(`[UploadHelper] Upload error: HTTP ${response.status}`);
                     const errText = await response.text();
                     let errMsg;
                     try {
@@ -114,6 +116,8 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
                     } catch {
                         errMsg = `Upload failed (HTTP ${response.status}): ${errText}`;
                     }
+                    if (onDebugLog) onDebugLog(`❌ ${errMsg}`);
+                    console.error(`[UploadHelper] Upload error: HTTP ${response.status}`);
                     logUploadStep('error', errMsg, { ...logMeta, httpStatus: response.status });
                     resolve({ data: null, error: new Error(errMsg) });
                 }
@@ -121,9 +125,11 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
                 clearTimeout(timeoutId);
                 console.error('[UploadHelper] Fetch error:', fetchErr.message);
                 if (fetchErr.name === 'AbortError') {
+                    if (onDebugLog) onDebugLog(`⏱️ Upload timed out after 90s`);
                     logUploadStep('timeout', 'Fetch timed out after 90 seconds', logMeta);
                     resolve({ data: null, error: new Error('Upload timed out. Please check your network connection.') });
                 } else {
+                    if (onDebugLog) onDebugLog(`❌ Fetch error: ${fetchErr.message}`);
                     logUploadStep('fetch_error', `Fetch error: ${fetchErr.message}`, { ...logMeta, errorName: fetchErr.name });
                     resolve({ data: null, error: new Error(`Upload failed: ${fetchErr.message}`) });
                 }
