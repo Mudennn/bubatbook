@@ -60,12 +60,40 @@ export async function uploadFileRobust(bucket, path, file, toast = null, onDebug
                 return resolve({ data: null, error: new Error(`File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max allowed size is 10MB.`) });
             }
 
-            if (onDebugLog) onDebugLog(`[4] Getting session...`);
-            const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
-            if (onDebugLog) onDebugLog(`[5] Session retrieved`);
-            if (sessionErr || !session) {
-                if (onDebugLog) onDebugLog(`❌ Not authenticated: ${sessionErr?.message || 'No session'}`);
-                logUploadStep('error', 'Not authenticated', { ...logMeta, sessionErr: sessionErr?.message });
+            if (onDebugLog) onDebugLog(`[4] Getting session (sync from localStorage)...`);
+
+            // Try to get session synchronously from localStorage to avoid Android hang
+            let session = null;
+            try {
+                const sessionStr = localStorage.getItem('rent2go-auth');
+                if (sessionStr) {
+                    const sessionData = JSON.parse(sessionStr);
+                    session = sessionData.session || sessionData;
+                    if (onDebugLog) onDebugLog(`[5] Session found in localStorage`);
+                }
+            } catch (err) {
+                if (onDebugLog) onDebugLog(`[5] localStorage read failed: ${err.message}`);
+            }
+
+            // Fallback: try async getSession with timeout
+            if (!session) {
+                if (onDebugLog) onDebugLog(`[5b] Trying async getSession with 5s timeout...`);
+                try {
+                    const sessionPromise = supabase.auth.getSession();
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('getSession timeout')), 5000)
+                    );
+                    const { data: { session: asyncSession } } = await Promise.race([sessionPromise, timeoutPromise]);
+                    session = asyncSession;
+                    if (onDebugLog) onDebugLog(`[5c] Async getSession succeeded`);
+                } catch (asyncErr) {
+                    if (onDebugLog) onDebugLog(`[5d] Async getSession failed: ${asyncErr.message}`);
+                }
+            }
+
+            if (!session) {
+                if (onDebugLog) onDebugLog(`❌ No session found`);
+                logUploadStep('error', 'Not authenticated', { ...logMeta });
                 return resolve({ data: null, error: new Error('Not authenticated. Please log in again.') });
             }
 
