@@ -82,12 +82,15 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
             console.log(`[UploadHelper] About to fetch with POST to ${url}`);
 
             try {
+                console.log(`[UploadHelper] Fetch URL: ${url}`);
+                console.log(`[UploadHelper] Auth token present: ${!!session.access_token}`);
+                console.log(`[UploadHelper] API key present: ${!!import.meta.env.VITE_SUPABASE_ANON_KEY}`);
+
                 const response = await fetch(url, {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${session.access_token}`,
                         'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
-                        'Content-Type': file.type || 'application/octet-stream',
                         'x-upsert': 'false',
                     },
                     body: file,
