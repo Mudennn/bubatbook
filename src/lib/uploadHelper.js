@@ -97,6 +97,7 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
             }
 
             xhr.onload = () => {
+                console.log(`[UploadHelper] XHR onload triggered! Status: ${xhr.status}`);
                 if (xhr.status >= 200 && xhr.status < 300) {
                     console.log(`[UploadHelper] Upload success! HTTP ${xhr.status}`);
                     logUploadStep('success', `Upload complete! HTTP ${xhr.status}`, { ...logMeta, httpStatus: xhr.status });
@@ -116,22 +117,24 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
             };
 
             xhr.onerror = () => {
-                console.error('[UploadHelper] XHR network error.');
+                console.error('[UploadHelper] XHR onerror triggered!');
                 logUploadStep('network_error', 'XHR network error — connection lost or CORS issue', logMeta);
                 resolve({ data: null, error: new Error('Network error during upload. Check connection.') });
             };
 
             xhr.ontimeout = () => {
-                console.error('[UploadHelper] XHR timeout after 90s.');
+                console.error('[UploadHelper] XHR ontimeout triggered after 90s!');
                 logUploadStep('timeout', 'XHR timed out after 90 seconds', logMeta);
                 resolve({ data: null, error: new Error('Upload timed out after 90s. Please check your network connection.') });
             };
 
+            console.log(`[UploadHelper] About to send File object: ${file.name} (${file.size} bytes)`);
             // Send the File object directly — XHR streams it from disk without
             // loading the entire file into JS heap memory.  This is the key fix
             // for Android browsers where FileReader.readAsArrayBuffer() + Uint8Array
             // copy would double RAM usage and freeze the JS thread.
             xhr.send(file);
+            console.log(`[UploadHelper] xhr.send() called`);
 
         } catch (err) {
             console.error('[UploadHelper] Unexpected error:', err);
