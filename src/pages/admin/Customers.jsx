@@ -45,6 +45,12 @@ export default function Customers() {
   const [editForm, setEditForm] = useState({});
   const [editFiles, setEditFiles] = useState({ ic: null, licence: null });
   const [savingEdit, setSavingEdit] = useState(false);
+  const [debugLog, setDebugLog] = useState([]);
+
+  const addDebugLog = (msg) => {
+    console.log('[DEBUG]', msg);
+    setDebugLog(prev => [...prev.slice(-4), `${new Date().toLocaleTimeString()}: ${msg}`]);
+  };
 
   // Add credit
   const [addCreditForm, setAddCreditForm] = useState({});
@@ -556,26 +562,38 @@ export default function Customers() {
 
                                   if (editFiles.ic) {
                                     if (editFiles.ic.size > MAX_FILE_SIZE) throw new Error(`IC file too large (${(editFiles.ic.size / 1024 / 1024).toFixed(1)}MB). Max 10MB.`);
+                                    addDebugLog(`IC file selected: ${editFiles.ic.name} (${(editFiles.ic.size/1024).toFixed(1)}KB)`);
                                     console.log('[EditSave] Uploading IC...');
                                     const ext = editFiles.ic.name.split('.').pop()?.toLowerCase() || 'jpg';
                                     const path = `${customer.id}/ic_admin_${Date.now()}.${ext}`;
-                                    
+
+                                    addDebugLog(`Uploading IC to: ${path}`);
                                     const { error: upErr } = await uploadFileRobust('customer-documents', path, editFiles.ic, toast);
-                                    if (upErr) throw new Error(`IC upload failed: ${upErr.message}`);
-                                    
+                                    if (upErr) {
+                                      addDebugLog(`IC upload ERROR: ${upErr.message}`);
+                                      throw new Error(`IC upload failed: ${upErr.message}`);
+                                    }
+
+                                    addDebugLog(`IC uploaded successfully!`);
                                     console.log('[EditSave] IC uploaded to:', path);
                                     sensitiveChanges.ic_file_path = { old: customer.ic_file_path || null, new: path };
                                   }
                                   
                                   if (editFiles.licence) {
                                     if (editFiles.licence.size > MAX_FILE_SIZE) throw new Error(`Licence file too large (${(editFiles.licence.size / 1024 / 1024).toFixed(1)}MB). Max 10MB.`);
+                                    addDebugLog(`Licence file selected: ${editFiles.licence.name} (${(editFiles.licence.size/1024).toFixed(1)}KB)`);
                                     console.log('[EditSave] Uploading licence...');
                                     const ext = editFiles.licence.name.split('.').pop()?.toLowerCase() || 'jpg';
                                     const path = `${customer.id}/licence_admin_${Date.now()}.${ext}`;
-                                    
+
+                                    addDebugLog(`Uploading licence to: ${path}`);
                                     const { error: upErr } = await uploadFileRobust('customer-documents', path, editFiles.licence, toast);
-                                    if (upErr) throw new Error(`Licence upload failed: ${upErr.message}`);
-                                    
+                                    if (upErr) {
+                                      addDebugLog(`Licence upload ERROR: ${upErr.message}`);
+                                      throw new Error(`Licence upload failed: ${upErr.message}`);
+                                    }
+
+                                    addDebugLog(`Licence uploaded successfully!`);
                                     console.log('[EditSave] Licence uploaded to:', path);
                                     sensitiveChanges.licence_file_path = { old: customer.licence_file_path || null, new: path };
                                   }
@@ -854,6 +872,15 @@ export default function Customers() {
                 </div>
               )}
             </div>
+          ))}
+        </div>
+      )}
+
+      {debugLog.length > 0 && (
+        <div className="fixed bottom-4 right-4 bg-slate-900 border border-red-500 rounded p-3 text-xs text-white z-50 max-w-sm max-h-48 overflow-y-auto font-mono space-y-1">
+          <div className="font-bold text-red-400">DEBUG LOG</div>
+          {debugLog.map((log, i) => (
+            <div key={i} className="text-slate-300">{log}</div>
           ))}
         </div>
       )}
