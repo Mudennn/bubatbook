@@ -143,19 +143,21 @@ export async function uploadFileRobust(bucket, path, file, toast = null, onDebug
                 if (onDebugLog) onDebugLog(`Response received! HTTP ${response.status}`);
                 console.log(`[UploadHelper] Fetch response received: HTTP ${response.status}`);
 
+                const respText = await response.text();
+                if (onDebugLog) onDebugLog(`Response body: ${respText.substring(0, 200)}`);
+
                 if (response.status >= 200 && response.status < 300) {
-                    if (onDebugLog) onDebugLog(`✅ Upload success!`);
+                    if (onDebugLog) onDebugLog(`✅ Upload success! HTTP ${response.status}`);
                     console.log(`[UploadHelper] Upload success! HTTP ${response.status}`);
                     logUploadStep('success', `Upload complete! HTTP ${response.status}`, { ...logMeta, httpStatus: response.status });
                     resolve({ data: { path }, error: null });
                 } else {
-                    const errText = await response.text();
                     let errMsg;
                     try {
-                        const errBody = JSON.parse(errText);
+                        const errBody = JSON.parse(respText);
                         errMsg = `Upload failed (HTTP ${response.status}): ${errBody.message || errBody.error}`;
                     } catch {
-                        errMsg = `Upload failed (HTTP ${response.status}): ${errText}`;
+                        errMsg = `Upload failed (HTTP ${response.status}): ${respText}`;
                     }
                     if (onDebugLog) onDebugLog(`❌ ${errMsg}`);
                     console.error(`[UploadHelper] Upload error: HTTP ${response.status}`);
