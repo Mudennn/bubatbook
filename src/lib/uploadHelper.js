@@ -143,15 +143,16 @@ export async function uploadFileRobust(bucket, path, file, toast = null, onDebug
                 if (onDebugLog) onDebugLog(`Response received! HTTP ${response.status}`);
                 console.log(`[UploadHelper] Fetch response received: HTTP ${response.status}`);
 
-                const respText = await response.text();
-                if (onDebugLog) onDebugLog(`Response body: ${respText.substring(0, 200)}`);
-
+                // For success, don't read body to avoid Android hang
                 if (response.status >= 200 && response.status < 300) {
                     if (onDebugLog) onDebugLog(`✅ Upload success! HTTP ${response.status}`);
                     console.log(`[UploadHelper] Upload success! HTTP ${response.status}`);
                     logUploadStep('success', `Upload complete! HTTP ${response.status}`, { ...logMeta, httpStatus: response.status });
                     resolve({ data: { path }, error: null });
                 } else {
+                    // Only read body for errors
+                    const respText = await response.text();
+                    if (onDebugLog) onDebugLog(`Response body: ${respText.substring(0, 200)}`);
                     let errMsg;
                     try {
                         const errBody = JSON.parse(respText);
