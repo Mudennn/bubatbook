@@ -67,90 +67,64 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
 
             const kbSize = Math.round(file.size / 1024);
             if (toast) toast.info(`Step 2: Uploading ${kbSize}KB...`);
-            logUploadStep('uploading', `XHR upload starting: ${kbSize}KB to ${bucket}/${path}`, { ...logMeta, kbSize });
-            console.log(`[UploadHelper] Starting upload of ${kbSize}KB to ${bucket}/${path}`);
+            logUploadStep('uploading', `Fetch upload starting: ${kbSize}KB to ${bucket}/${path}`, { ...logMeta, kbSize });
+            console.log(`[UploadHelper] Starting fetch upload of ${kbSize}KB to ${bucket}/${path}`);
 
             const url = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/${bucket}/${path}`;
-            const xhr = new XMLHttpRequest();
 
-            xhr.open('POST', url, true);
-            xhr.setRequestHeader('Authorization', `Bearer ${session.access_token}`);
-            xhr.setRequestHeader('apikey', import.meta.env.VITE_SUPABASE_ANON_KEY);
-            xhr.setRequestHeader('Content-Type', file.type || 'application/octet-stream');
-            xhr.setRequestHeader('x-upsert', 'false'); // Critical: true causes RLS hangs on insert-only buckets
+            // Use fetch with timeout instead of XHR (better Android compatibility)
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => {
+                console.error('[UploadHelper] Fetch timeout after 90s');
+                controller.abort();
+            }, 90000);
 
-            xhr.timeout = 90000; // 90s timeout for slower mobile networks
+            console.log(`[UploadHelper] About to fetch with POST to ${url}`);
 
-            // Hard timeout for Android XHR hangs — force abort if nothing happens in 30s
-            let hardTimeoutId = setTimeout(() => {
-                if (!xhr.readyState || xhr.readyState !== 4) {
-                    console.error('[UploadHelper] HARD TIMEOUT: Aborting XHR after 30s (readyState: ' + xhr.readyState + ')');
-                    xhr.abort();
-                    logUploadStep('hard_timeout', 'XHR hung — aborting after 30s', { ...logMeta });
-                    resolve({ data: null, error: new Error('Upload request hung on Android. Please check your connection and try again.') });
-                }
-            }, 30000);
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${session.access_token}`,
+                        'apikey': import.meta.env.VITE_SUPABASE_ANON_KEY,
+                        'Content-Type': file.type || 'application/octet-stream',
+                        'x-upsert': 'false',
+                    },
+                    body: file,
+                    signal: controller.signal,
+                });
 
-            // Clear hard timeout when XHR completes
-            const clearHardTimeout = () => clearTimeout(hardTimeoutId);
+                clearTimeout(timeoutId);
+                console.log(`[UploadHelper] Fetch response received: HTTP ${response.status}`);
 
-            if (toast) {
-                xhr.upload.onprogress = (e) => {
-                    if (e.lengthComputable) {
-                        const percent = Math.round((e.loaded / e.total) * 100);
-                        if (percent === 50 || percent === 100) {
-                            console.log(`[UploadHelper] Progress: ${percent}%`);
-                            if (percent === 50) {
-                                toast.info(`Uploading: 50%...`);
-                                logUploadStep('progress', 'Upload 50%', { ...logMeta, percent });
-                            }
-                        }
-                    }
-                };
-            }
-
-            xhr.onload = () => {
-                clearHardTimeout();
-                console.log(`[UploadHelper] XHR onload triggered! Status: ${xhr.status}`);
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    console.log(`[UploadHelper] Upload success! HTTP ${xhr.status}`);
-                    logUploadStep('success', `Upload complete! HTTP ${xhr.status}`, { ...logMeta, httpStatus: xhr.status });
+                if (response.status >= 200 && response.status < 300) {
+                    console.log(`[UploadHelper] Upload success! HTTP ${response.status}`);
+                    logUploadStep('success', `Upload complete! HTTP ${response.status}`, { ...logMeta, httpStatus: response.status });
                     resolve({ data: { path }, error: null });
                 } else {
-                    console.error(`[UploadHelper] Upload error: HTTP ${xhr.status}`, xhr.responseText);
+                    console.error(`[UploadHelper] Upload error: HTTP ${response.status}`);
+                    const errText = await response.text();
                     let errMsg;
                     try {
-                        const errBody = JSON.parse(xhr.responseText);
-                        errMsg = `Upload failed (HTTP ${xhr.status}): ${errBody.message || errBody.error}`;
+                        const errBody = JSON.parse(errText);
+                        errMsg = `Upload failed (HTTP ${response.status}): ${errBody.message || errBody.error}`;
                     } catch {
-                        errMsg = `Upload failed (HTTP ${xhr.status}): ${xhr.statusText}`;
+                        errMsg = `Upload failed (HTTP ${response.status}): ${errText}`;
                     }
-                    logUploadStep('error', errMsg, { ...logMeta, httpStatus: xhr.status, response: xhr.responseText?.substring(0, 500) });
+                    logUploadStep('error', errMsg, { ...logMeta, httpStatus: response.status });
                     resolve({ data: null, error: new Error(errMsg) });
                 }
-            };
-
-            xhr.onerror = () => {
-                clearHardTimeout();
-                console.error('[UploadHelper] XHR onerror triggered!');
-                logUploadStep('network_error', 'XHR network error — connection lost or CORS issue', logMeta);
-                resolve({ data: null, error: new Error('Network error during upload. Check connection.') });
-            };
-
-            xhr.ontimeout = () => {
-                clearHardTimeout();
-                console.error('[UploadHelper] XHR ontimeout triggered after 90s!');
-                logUploadStep('timeout', 'XHR timed out after 90 seconds', logMeta);
-                resolve({ data: null, error: new Error('Upload timed out after 90s. Please check your network connection.') });
-            };
-
-            console.log(`[UploadHelper] About to send File object: ${file.name} (${file.size} bytes)`);
-            // Send the File object directly — XHR streams it from disk without
-            // loading the entire file into JS heap memory.  This is the key fix
-            // for Android browsers where FileReader.readAsArrayBuffer() + Uint8Array
-            // copy would double RAM usage and freeze the JS thread.
-            xhr.send(file);
-            console.log(`[UploadHelper] xhr.send() called`);
+            } catch (fetchErr) {
+                clearTimeout(timeoutId);
+                console.error('[UploadHelper] Fetch error:', fetchErr.message);
+                if (fetchErr.name === 'AbortError') {
+                    logUploadStep('timeout', 'Fetch timed out after 90 seconds', logMeta);
+                    resolve({ data: null, error: new Error('Upload timed out. Please check your network connection.') });
+                } else {
+                    logUploadStep('fetch_error', `Fetch error: ${fetchErr.message}`, { ...logMeta, errorName: fetchErr.name });
+                    resolve({ data: null, error: new Error(`Upload failed: ${fetchErr.message}`) });
+                }
+            }
 
         } catch (err) {
             console.error('[UploadHelper] Unexpected error:', err);
