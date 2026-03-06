@@ -81,6 +81,19 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
 
             xhr.timeout = 90000; // 90s timeout for slower mobile networks
 
+            // Hard timeout for Android XHR hangs — force abort if nothing happens in 30s
+            let hardTimeoutId = setTimeout(() => {
+                if (!xhr.readyState || xhr.readyState !== 4) {
+                    console.error('[UploadHelper] HARD TIMEOUT: Aborting XHR after 30s (readyState: ' + xhr.readyState + ')');
+                    xhr.abort();
+                    logUploadStep('hard_timeout', 'XHR hung — aborting after 30s', { ...logMeta });
+                    resolve({ data: null, error: new Error('Upload request hung on Android. Please check your connection and try again.') });
+                }
+            }, 30000);
+
+            // Clear hard timeout when XHR completes
+            const clearHardTimeout = () => clearTimeout(hardTimeoutId);
+
             if (toast) {
                 xhr.upload.onprogress = (e) => {
                     if (e.lengthComputable) {
@@ -97,6 +110,7 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
             }
 
             xhr.onload = () => {
+                clearHardTimeout();
                 console.log(`[UploadHelper] XHR onload triggered! Status: ${xhr.status}`);
                 if (xhr.status >= 200 && xhr.status < 300) {
                     console.log(`[UploadHelper] Upload success! HTTP ${xhr.status}`);
@@ -117,12 +131,14 @@ export async function uploadFileRobust(bucket, path, file, toast = null) {
             };
 
             xhr.onerror = () => {
+                clearHardTimeout();
                 console.error('[UploadHelper] XHR onerror triggered!');
                 logUploadStep('network_error', 'XHR network error — connection lost or CORS issue', logMeta);
                 resolve({ data: null, error: new Error('Network error during upload. Check connection.') });
             };
 
             xhr.ontimeout = () => {
+                clearHardTimeout();
                 console.error('[UploadHelper] XHR ontimeout triggered after 90s!');
                 logUploadStep('timeout', 'XHR timed out after 90 seconds', logMeta);
                 resolve({ data: null, error: new Error('Upload timed out after 90s. Please check your network connection.') });
