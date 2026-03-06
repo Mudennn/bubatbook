@@ -877,7 +877,7 @@ export default function Customers() {
       )}
 
       {debugLog.length > 0 && (
-        <div className="fixed bottom-4 right-4 bg-slate-900 border border-red-500 rounded p-3 text-xs text-white z-50 max-w-sm max-h-48 overflow-y-auto font-mono space-y-1">
+        <div className="fixed top-20 left-4 bg-slate-900 border border-red-500 rounded p-3 text-xs text-white z-50 max-w-sm max-h-48 overflow-y-auto font-mono space-y-1">
           <div className="font-bold text-red-400">DEBUG LOG</div>
           {debugLog.map((log, i) => (
             <div key={i} className="text-slate-300">{log}</div>
