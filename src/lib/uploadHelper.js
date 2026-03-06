@@ -41,29 +41,42 @@ export async function uploadFileRobust(bucket, path, file, toast = null, onDebug
 
     return new Promise(async (resolve) => {
         try {
+            if (onDebugLog) onDebugLog(`[1] Starting upload: ${file.name}`);
             if (toast) toast.info('Step 1: Preparing file...');
             logUploadStep('preflight', `Starting upload: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`, logMeta);
 
             // 0. Pre-flight checks
+            if (onDebugLog) onDebugLog(`[2] Checking file format...`);
             if (file.name.match(/\.(heic|heif)$/i) || file.type.match(/heic|heif/i)) {
+                if (onDebugLog) onDebugLog(`❌ HEIC format rejected`);
                 logUploadStep('error', 'HEIC format rejected', logMeta);
                 return resolve({ data: null, error: new Error('HEIC format not supported. Please change camera settings to JPEG or use a different file.') });
             }
+
+            if (onDebugLog) onDebugLog(`[3] Checking file size: ${(file.size / 1024 / 1024).toFixed(1)}MB`);
             if (file.size > 10 * 1024 * 1024) {
+                if (onDebugLog) onDebugLog(`❌ File too large`);
                 logUploadStep('error', `File too large: ${(file.size / 1024 / 1024).toFixed(1)}MB`, logMeta);
                 return resolve({ data: null, error: new Error(`File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max allowed size is 10MB.`) });
             }
 
+            if (onDebugLog) onDebugLog(`[4] Getting session...`);
             const { data: { session }, error: sessionErr } = await supabase.auth.getSession();
+            if (onDebugLog) onDebugLog(`[5] Session retrieved`);
             if (sessionErr || !session) {
+                if (onDebugLog) onDebugLog(`❌ Not authenticated: ${sessionErr?.message || 'No session'}`);
                 logUploadStep('error', 'Not authenticated', { ...logMeta, sessionErr: sessionErr?.message });
                 return resolve({ data: null, error: new Error('Not authenticated. Please log in again.') });
             }
+
+            if (onDebugLog) onDebugLog(`[6] Auth OK, constructing URL...`);
 
             // Warn user about large files (> 5MB) — they still upload but may be slow on mobile
             if (file.size > 5 * 1024 * 1024 && toast) {
                 toast.warn(`Large file (${(file.size / 1024 / 1024).toFixed(1)}MB) — upload may take a moment on mobile.`);
             }
+
+            if (onDebugLog) onDebugLog(`[7] Ready to upload...`);
 
             const kbSize = Math.round(file.size / 1024);
             if (toast) toast.info(`Step 2: Uploading ${kbSize}KB...`);
